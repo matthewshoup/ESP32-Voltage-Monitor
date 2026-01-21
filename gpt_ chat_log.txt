@@ -58,3 +58,7 @@ Update Summary
 - Embedded self-signed TLS cert/key into esp32 voltage monitor.
 - Switched server to beginSecure() using AsyncTCP_SSL.
 - Updated FSD to note HTTPS on port 443 with self-signed cert.
+
+Update Summary
+- Renamed source file to esp32_voltage_monitor.ino (rename not yet committed).
+- Pending commit request: "changed to ino file for arduino".
