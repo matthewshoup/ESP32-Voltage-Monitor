@@ -24,6 +24,19 @@ api:
 ota:
   password: "CHANGE_ME_OTA_PASSWORD"
 
+# Relay output
+output:
+  - platform: gpio
+    pin: GPIO26
+    id: relay_output
+
+switch:
+  - platform: output
+    name: "Relay"
+    id: relay_switch
+    output: relay_output
+    restore_mode: ALWAYS_ON
+
 # I2C for SSD1306 OLED
 i2c:
   sda: 21
@@ -39,6 +52,13 @@ sensor:
     update_interval: 2s
     filters:
       - multiply: 11.0  # R1=100k, R2=10k => (R1+R2)/R2 = 11
+    on_value_range:
+      - below: 16.8
+        then:
+          - switch.turn_off: relay_switch
+      - above: 17.3
+        then:
+          - switch.turn_on: relay_switch
 
 # Low voltage alert thresholds
 binary_sensor:

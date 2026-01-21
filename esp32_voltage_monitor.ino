@@ -102,6 +102,7 @@ RELAY MODULE:
   VCC -> ESP32 5V (or 3.3V if module supports it)
   GND -> ESP32 GND
   IN  -> ESP32 GPIO26
+  NOTE -> Relay control on GPIO26 (assumes active HIGH)
 
 OLED (SSD1306 I2C):
   VCC -> ESP32 3.3V
@@ -123,9 +124,10 @@ Battery + ---- R1 100k ----+---- R2 10k ---- Battery - (GND)
 Battery - -----------------+---- ESP32 GND
 
 Relay Module:
-  VCC ---- 5V (or 3.3V)
-  GND ---- GND
-  IN  ---- GPIO26
+  VCC ---- ESP32 5V (or 3.3V)
+  GND ---- ESP32 GND
+  IN  ---- ESP32 GPIO26
+  NOTE --- Relay control on GPIO26 (assumes active HIGH)
 
 OLED (SSD1306 I2C):
   VCC ---- 3.3V
