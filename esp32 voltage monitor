@@ -75,6 +75,7 @@ OLED (SSD1306 I2C):
 #define OLED_ADDRESS  0x3C
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+bool oledAvailable = true;
 
 // ================= CONFIG =================
 const char* ssid = "YOUR_WIFI_SSID";
@@ -96,11 +97,13 @@ float R2 = 10000.0;
 
 // Voltage threshold
 float cutoffVoltage = 16.8;
+float warningVoltage = 17.0;
 
 // ==========================================
 
 AsyncWebServer server(80);
 bool alertSent = false;
+float lastVoltage = 0.0;
 
 float readBatteryVoltage() {
   int raw = analogRead(BATTERY_PIN);
@@ -109,6 +112,10 @@ float readBatteryVoltage() {
 }
 
 void updateOLED(float voltage) {
+  if (!oledAvailable) {
+    return;
+  }
+
   display.clearDisplay();
 
   display.setTextColor(SSD1306_WHITE);
@@ -128,6 +135,11 @@ void updateOLED(float voltage) {
     display.println("STATUS: LOW VOLTAGE");
   } else {
     display.println("STATUS: OK");
+  }
+
+  if (voltage <= warningVoltage) {
+    display.setCursor(0, 56);
+    display.println("WARNING: <=17.0V");
   }
 
   display.display();
@@ -170,26 +182,41 @@ void setup() {
 
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
     Serial.println("OLED init failed");
-    while (true);
+    oledAvailable = false;
+  } else {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.println("ESP32 Starting...");
+    display.display();
   }
 
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setCursor(0, 0);
-  display.println("ESP32 Starting...");
-  display.display();
-
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  unsigned long wifiStart = millis();
+  while (WiFi.status() != WL_CONNECTED && (millis() - wifiStart) < 10000) {
     delay(500);
+  }
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected, continuing offline");
   }
 
   WebSerial.begin(&server);
+  server.on("/voltage", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String payload = "{\"battery_voltage\": " + String(lastVoltage, 2) + "}";
+    if (request->hasParam("callback")) {
+      String callback = request->getParam("callback")->value();
+      String jsonp = callback + "(" + payload + ");";
+      request->send(200, "application/javascript", jsonp);
+    } else {
+      request->send(200, "application/json", payload);
+    }
+  });
   server.begin();
 }
 
 void loop() {
   float voltage = readBatteryVoltage();
+  lastVoltage = voltage;
 
   Serial.printf("Battery Voltage: %.2f V\n", voltage);
   WebSerial.printf("Battery Voltage: %.2f V\n", voltage);
