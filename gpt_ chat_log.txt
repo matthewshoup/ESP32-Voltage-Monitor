@@ -1,0 +1,25 @@
+Chat Summary - ESP32 Voltage Monitor
+
+Scope
+- Implemented OLED warning, web endpoint, JSONP support, and resilience to missing OLED/WiFi.
+- Added a Functional Specification Document (FSD) header to the code.
+- Made multiple commits as requested.
+
+Key Changes
+- OLED warning when voltage <= 17.0V.
+- /voltage GET endpoint returning JSON, JSONP with callback param.
+- Program continues if OLED init fails.
+- WiFi connect times out after ~10s and continues offline.
+- Added FSD block at top of the source file.
+
+Files Updated
+- esp32 voltage monitor
+
+Commits Created
+- "chatgpt commit" (initial add of file)
+- "adding a few checks for wifi and oleds"
+- "adding FSD at the top"
+
+Notes
+- /voltage is HTTP on port 80. HTTPS would require TLS or a proxy.
+- OLED warning and low-voltage cutoff remain separate thresholds.
