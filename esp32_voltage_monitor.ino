@@ -145,7 +145,7 @@ OLED (SSD1306 I2C):
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-//# Git test
+
 // ================= OLED CONFIG =================
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -264,9 +264,9 @@ void updateOLED(float voltage) {
   display.setCursor(0, 48);
 
   if (voltage <= cutoffVoltage) {
-    display.println("STATUS: LOW VOLTAGE");
+    display.println("!! STATUS: LOW VOLTAGE !!");
   } else {
-    display.println("STATUS: OK");
+    display.println("[STATUS: OK]");
   }
 
   if (voltage <= warningVoltage) {
