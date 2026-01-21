@@ -1,0 +1,215 @@
+/*
+====================================================================
+USE3D PROMPT — SYSTEM DESCRIPTION
+====================================================================
+
+Create an ESP32-based monitoring system with the following behavior:
+
+FUNCTIONALITY
+- Continuously monitor battery voltage using an ESP32 ADC pin and
+  a properly sized voltage divider.
+- Detect when battery voltage drops to or below 16.8 volts.
+
+LOW-VOLTAGE RESPONSE
+When the battery voltage reaches 16.8V or lower:
+- Immediately disable the relay output to protect the system.
+- Send a single SMS alert using the Twilio API.
+- Send an HTTP POST request to http://192.168.1.3 containing the
+  current battery voltage in JSON format.
+- Prevent repeated alerts until voltage recovers above the threshold.
+
+NETWORK & INTERFACE
+- Connect to WiFi using configured credentials.
+- Host a web server on the ESP32.
+- Stream serial output to a browser in real time for monitoring.
+
+DISPLAY
+- Show live battery voltage and system status on an internal OLED.
+
+OPERATIONAL CONSTRAINTS
+- A voltage divider must be used to ensure ADC input voltage
+  remains within ESP32 limits.
+- Relay logic level may vary depending on hardware.
+- Alert state resets only after voltage rises above the cutoff
+  plus hysteresis.
+
+====================================================================
+*/
+
+/*
+====================================================================
+WIRING DIAGRAM (TEXT)
+====================================================================
+
+BATTERY + -> R1 (100k) -> NODE -> R2 (10k) -> BATTERY - (GND)
+NODE -> ESP32 GPIO34 (ADC input)
+BATTERY - -> ESP32 GND (common ground)
+
+RELAY MODULE:
+  VCC -> ESP32 5V (or 3.3V if module supports it)
+  GND -> ESP32 GND
+  IN  -> ESP32 GPIO26
+
+OLED (SSD1306 I2C):
+  VCC -> ESP32 3.3V
+  GND -> ESP32 GND
+  SDA -> ESP32 GPIO21
+  SCL -> ESP32 GPIO22
+
+====================================================================
+*/
+
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
+#include <WebSerial.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// ================= OLED CONFIG =================
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    -1
+#define OLED_ADDRESS  0x3C
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// ================= CONFIG =================
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+// Twilio
+const char* twilioSID   = "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+const char* twilioToken = "your_auth_token";
+const char* twilioFrom  = "+1234567890";
+const char* twilioTo    = "+1987654321";
+
+// Pins
+#define BATTERY_PIN 34
+#define RELAY_PIN   26
+
+// Voltage divider values
+float R1 = 100000.0;
+float R2 = 10000.0;
+
+// Voltage threshold
+float cutoffVoltage = 16.8;
+
+// ==========================================
+
+AsyncWebServer server(80);
+bool alertSent = false;
+
+float readBatteryVoltage() {
+  int raw = analogRead(BATTERY_PIN);
+  float adcVoltage = (raw / 4095.0) * 3.3;
+  return adcVoltage * ((R1 + R2) / R2);
+}
+
+void updateOLED(float voltage) {
+  display.clearDisplay();
+
+  display.setTextColor(SSD1306_WHITE);
+
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println("Battery Voltage");
+
+  display.setTextSize(2);
+  display.setCursor(0, 16);
+  display.printf("%.2f V\n", voltage);
+
+  display.setTextSize(1);
+  display.setCursor(0, 48);
+
+  if (voltage <= cutoffVoltage) {
+    display.println("STATUS: LOW VOLTAGE");
+  } else {
+    display.println("STATUS: OK");
+  }
+
+  display.display();
+}
+
+void sendTwilioSMS(String message) {
+  HTTPClient http;
+  String url = "https://api.twilio.com/2010-04-01/Accounts/" +
+               String(twilioSID) + "/Messages.json";
+
+  http.begin(url);
+  http.setAuthorization(twilioSID, twilioToken);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+  String body = "From=" + String(twilioFrom) +
+                "&To=" + String(twilioTo) +
+                "&Body=" + message;
+
+  http.POST(body);
+  http.end();
+}
+
+void sendLocalPOST(float voltage) {
+  HTTPClient http;
+  http.begin("http://192.168.1.3");
+  http.addHeader("Content-Type", "application/json");
+
+  String payload = "{\"battery_voltage\": " + String(voltage, 2) + "}";
+  http.POST(payload);
+  http.end();
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, HIGH);
+
+  Wire.begin(21, 22);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
+    Serial.println("OLED init failed");
+    while (true);
+  }
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println("ESP32 Starting...");
+  display.display();
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+
+  WebSerial.begin(&server);
+  server.begin();
+}
+
+void loop() {
+  float voltage = readBatteryVoltage();
+
+  Serial.printf("Battery Voltage: %.2f V\n", voltage);
+  WebSerial.printf("Battery Voltage: %.2f V\n", voltage);
+
+  updateOLED(voltage);
+
+  if (voltage <= cutoffVoltage && !alertSent) {
+    digitalWrite(RELAY_PIN, LOW);
+
+    sendTwilioSMS("ALERT: Battery voltage dropped to " +
+                  String(voltage, 2) + "V");
+
+    sendLocalPOST(voltage);
+
+    alertSent = true;
+  }
+
+  if (voltage > cutoffVoltage + 0.5) {
+    alertSent = false;
+  }
+
+  delay(2000);
+}
