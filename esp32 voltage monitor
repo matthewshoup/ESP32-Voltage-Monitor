@@ -32,7 +32,7 @@ Functional Requirements
    - At or below 16.8V: disable relay, send SMS, send local POST.
    - Prevent repeated alerts until voltage rises above 17.3V.
 4) Web Interface
-   - Host AsyncWebServer on port 80.
+   - Host AsyncWebServer on port 443.
    - `/voltage` returns JSON: {"battery_voltage": XX.XX}
    - If `callback` param provided, return JSONP: callback(...);
 5) Connectivity
@@ -178,7 +178,7 @@ float warningVoltage = 17.0;
 
 // ==========================================
 
-AsyncWebServer server(80);
+AsyncWebServer server(443);
 bool alertSent = false;
 float lastVoltage = 0.0;
 
