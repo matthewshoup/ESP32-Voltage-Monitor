@@ -1,0 +1,71 @@
+esphome:
+  name: esp32_voltage_monitor
+  friendly_name: ESP32 Voltage Monitor
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+wifi:
+  ssid: "YOUR_WIFI_SSID"
+  password: "YOUR_WIFI_PASSWORD"
+
+  ap:
+    ssid: "ESP32 Voltage Monitor Fallback"
+    password: "changeme123"
+
+captive_portal:
+
+logger:
+
+api:
+
+ota:
+  password: "CHANGE_ME_OTA_PASSWORD"
+
+# I2C for SSD1306 OLED
+i2c:
+  sda: 21
+  scl: 22
+
+# ADC voltage measurement (GPIO34)
+sensor:
+  - platform: adc
+    pin: GPIO34
+    name: "Battery Voltage"
+    id: battery_voltage
+    attenuation: 11db
+    update_interval: 2s
+    filters:
+      - multiply: 11.0  # R1=100k, R2=10k => (R1+R2)/R2 = 11
+
+# Low voltage alert thresholds
+binary_sensor:
+  - platform: template
+    name: "Low Voltage"
+    lambda: |-
+      return id(battery_voltage).state <= 16.8;
+    update_interval: 2s
+
+# OLED display
+font:
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 12
+  - file: "gfonts://Roboto"
+    id: font_large
+    size: 18
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    address: 0x3C
+    lambda: |-
+      it.printf(0, 0, id(font_small), "Battery Voltage");
+      it.printf(0, 16, id(font_large), "%.2f V", id(battery_voltage).state);
+      if (id(battery_voltage).state <= 16.8) {
+        it.printf(0, 48, id(font_small), "!! STATUS: LOW VOLTAGE !!");
+      } else {
+        it.printf(0, 48, id(font_small), "[STATUS: OK]");
+      }

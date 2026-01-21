@@ -68,3 +68,17 @@ Update Summary
   Response: Used symbol emphasis for OLED status text since display is monochrome.
 - Prompt: commit it and use a funny commit message about being a "bad ass"
   Response: Committed as "bad ass status flair" and pushed to main.
+
+Update Summary
+- Prompt: add add arduino libraries to a new folder called arduino_libs
+  Response: Asked which libraries and sources to use.
+- Prompt: nevermind
+  Response: Acknowledged and skipped the request.
+
+Update Summary
+- Prompt: can ypu add a new file with ESPHOME YAML file to a new file called ESPHOME.yaml
+  Response: Created ESPHOME.yaml with ADC, OLED display, and low-voltage status.
+- Prompt: and add the code to the YAML file for ESPHOME?
+  Response: Asked which sketch features to port into ESPHome.
+- Prompt: can you add the code to have ESPHOME be able to change code OTA?
+  Response: Added OTA password field in ESPHOME.yaml.
