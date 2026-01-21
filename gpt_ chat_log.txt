@@ -49,3 +49,12 @@ Update - Recent Actions
   Response: Appended a new summary update to gpt_ chat_log.txt.
 - Prompt: can you add my prompt messages to that at the top of yeach update? / both
   Response: Added prompts/responses at the top of the update section.
+
+Update Summary
+- TLS work planned: switch to ESPAsyncWebServer_SSL / AsyncTCP_SSL.
+- Awaiting decision on cert/key loading (embed PEM vs SPIFFS/LittleFS).
+
+Update Summary
+- Embedded self-signed TLS cert/key into esp32 voltage monitor.
+- Switched server to beginSecure() using AsyncTCP_SSL.
+- Updated FSD to note HTTPS on port 443 with self-signed cert.
