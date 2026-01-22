@@ -369,25 +369,40 @@ void updateOLED(float voltage) {
   display.setTextColor(SSD1306_WHITE);
 
   display.setTextSize(1);
-  display.setCursor(0, 0);
-  display.println("Battery Voltage");
+  int16_t x1, y1;
+  uint16_t w, h;
+  const char* title = "Battery Voltage";
+  display.getTextBounds(title, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((SCREEN_WIDTH - w) / 2, 0);
+  display.println(title);
 
   display.setTextSize(2);
-  display.setCursor(0, 16);
-  display.printf("%.2f V\n", voltage);
+  char voltageText[16];
+  snprintf(voltageText, sizeof(voltageText), "%.2f V", voltage);
+  display.getTextBounds(voltageText, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((SCREEN_WIDTH - w) / 2, 16);
+  display.println(voltageText);
 
   display.setTextSize(1);
-  display.setCursor(0, 48);
+  int16_t statusY = 48;
 
   if (voltage <= cutoffVoltage) {
-    display.println("!! STATUS: LOW VOLTAGE !!");
+    const char* status = "!! STATUS: LOW VOLTAGE !!";
+    display.getTextBounds(status, 0, 0, &x1, &y1, &w, &h);
+    display.setCursor((SCREEN_WIDTH - w) / 2, statusY);
+    display.println(status);
   } else {
-    display.println("[STATUS: OK]");
+    const char* status = "[STATUS: OK]";
+    display.getTextBounds(status, 0, 0, &x1, &y1, &w, &h);
+    display.setCursor((SCREEN_WIDTH - w) / 2, statusY);
+    display.println(status);
   }
 
   if (voltage <= warningVoltage) {
-    display.setCursor(0, 56);
-    display.println("WARNING: <=17.0V");
+    const char* warning = "WARNING: <=17.0V";
+    display.getTextBounds(warning, 0, 0, &x1, &y1, &w, &h);
+    display.setCursor((SCREEN_WIDTH - w) / 2, 56);
+    display.println(warning);
   }
 
   display.display();
