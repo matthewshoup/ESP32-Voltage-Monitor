@@ -87,3 +87,7 @@ Update Summary
   Response: Centered OLED title, voltage, status, and warning lines.
 - Prompt: can you commit those changes with the message "adding more features" and push to main?
   Response: Committed and pushed to main.
+
+Update Summary
+- Prompt: can you change the font-family to roboto from google fonts?
+  Response: Switched the web UI font to Roboto via Google Fonts.
