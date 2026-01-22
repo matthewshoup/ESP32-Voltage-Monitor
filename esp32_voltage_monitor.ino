@@ -468,42 +468,46 @@ void setup() {
     Serial.println("WiFi not connected, continuing offline");
   }
 
-  WebSerial.begin(&server);
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send_P(200, "text/html", index_html);
-  });
-  server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String status = "OK";
-    String message = "System healthy.";
-    if (lastVoltage <= cutoffVoltage) {
-      status = "LOW";
-      message = "Voltage below cutoff. Relay disabled.";
-    } else if (lastVoltage <= warningVoltage) {
-      status = "WARNING";
-      message = "Voltage approaching cutoff.";
-    }
+  if (String(ssid) == "YOUR_WIFI_SSID") {
+    Serial.println("WiFi SSID placeholder in use, skipping web server init.");
+  } else {
+    WebSerial.begin(&server);
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send_P(200, "text/html", index_html);
+    });
+    server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request) {
+      String status = "OK";
+      String message = "System healthy.";
+      if (lastVoltage <= cutoffVoltage) {
+        status = "LOW";
+        message = "Voltage below cutoff. Relay disabled.";
+      } else if (lastVoltage <= warningVoltage) {
+        status = "WARNING";
+        message = "Voltage approaching cutoff.";
+      }
 
-    String payload = "{";
-    payload += "\"battery_voltage\":" + String(lastVoltage, 2);
-    payload += ",\"status\":\"" + status + "\"";
-    payload += ",\"message\":\"" + message + "\"";
-    payload += ",\"relay_on\":" + String(relayOn ? "true" : "false");
-    payload += ",\"alert_sent\":" + String(alertSent ? "true" : "false");
-    payload += ",\"wifi\":\"" + String(WiFi.status() == WL_CONNECTED ? "connected" : "offline") + "\"";
-    payload += "}";
-    request->send(200, "application/json", payload);
-  });
-  server.on("/voltage", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String payload = "{\"battery_voltage\": " + String(lastVoltage, 2) + "}";
-    if (request->hasParam("callback")) {
-      String callback = request->getParam("callback")->value();
-      String jsonp = callback + "(" + payload + ");";
-      request->send(200, "application/javascript", jsonp);
-    } else {
+      String payload = "{";
+      payload += "\"battery_voltage\":" + String(lastVoltage, 2);
+      payload += ",\"status\":\"" + status + "\"";
+      payload += ",\"message\":\"" + message + "\"";
+      payload += ",\"relay_on\":" + String(relayOn ? "true" : "false");
+      payload += ",\"alert_sent\":" + String(alertSent ? "true" : "false");
+      payload += ",\"wifi\":\"" + String(WiFi.status() == WL_CONNECTED ? "connected" : "offline") + "\"";
+      payload += "}";
       request->send(200, "application/json", payload);
-    }
-  });
-  server.beginSecure(serverCert, serverKey, nullptr);
+    });
+    server.on("/voltage", HTTP_GET, [](AsyncWebServerRequest *request) {
+      String payload = "{\"battery_voltage\": " + String(lastVoltage, 2) + "}";
+      if (request->hasParam("callback")) {
+        String callback = request->getParam("callback")->value();
+        String jsonp = callback + "(" + payload + ");";
+        request->send(200, "application/javascript", jsonp);
+      } else {
+        request->send(200, "application/json", payload);
+      }
+    });
+    server.beginSecure(serverCert, serverKey, nullptr);
+  }
 }
 
 void loop() {

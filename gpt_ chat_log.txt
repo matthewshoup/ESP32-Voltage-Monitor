@@ -91,3 +91,7 @@ Update Summary
 Update Summary
 - Prompt: can you change the font-family to roboto from google fonts?
   Response: Switched the web UI font to Roboto via Google Fonts.
+
+Update Summary
+- Prompt: can you add if ssid = "YOUR_WIFI_SSID" skip initializing the web server?
+  Response: Added a guard to skip WebSerial and web server init when SSID is still the placeholder.
