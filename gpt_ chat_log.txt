@@ -31,8 +31,7 @@ Update Summary
 - Switched between dev and main branches on request.
 - Updated gpt_ chat_log.txt with recent actions.
 
-Update - Recent Actions
-
+Update Summary
 - Prompt: can you make me an ascii version of the circuit diagram and add it as a commit below the last comment at the top?
   Response: Added an ASCII wiring diagram comment block below the existing wiring diagram.
 - Prompt: commit message is adding ascii wiring digram
