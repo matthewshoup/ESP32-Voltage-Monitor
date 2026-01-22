@@ -221,6 +221,119 @@ PH9NbIrdiL4W6EfBPyaVHYTM
 -----END PRIVATE KEY-----
 )PEM";
 
+const char index_html[] PROGMEM = R"HTML(
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESP32 Voltage Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      body { font-family: "Space Grotesk", sans-serif; }
+    </style>
+  </head>
+  <body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-900 text-slate-100">
+    <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-10">
+      <header class="flex flex-col gap-2">
+        <p class="text-sm uppercase tracking-[0.3em] text-amber-300">ESP32 Monitor</p>
+        <h1 class="text-3xl font-bold sm:text-4xl">Battery Voltage Status</h1>
+        <p class="max-w-2xl text-sm text-slate-300">
+          Live telemetry from the ESP32. Self-signed HTTPS may require a one-time browser trust prompt.
+        </p>
+      </header>
+
+      <section class="grid gap-6 md:grid-cols-[2fr_1fr]">
+        <div class="rounded-3xl border border-slate-700/60 bg-slate-900/60 p-6 shadow-xl">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-200">Battery Voltage</h2>
+            <span id="statusBadge" class="rounded-full bg-emerald-400/20 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200">OK</span>
+          </div>
+          <div class="mt-6 flex items-end gap-4">
+            <p id="voltageValue" class="text-5xl font-bold tracking-tight">--</p>
+            <p class="pb-2 text-sm text-slate-400">volts</p>
+          </div>
+          <p id="statusMessage" class="mt-4 text-sm text-slate-300">
+            Waiting for data...
+          </p>
+        </div>
+
+        <div class="rounded-3xl border border-slate-700/60 bg-slate-900/60 p-6 shadow-xl">
+          <h2 class="text-lg font-semibold text-slate-200">System Signals</h2>
+          <div class="mt-4 space-y-3 text-sm text-slate-300">
+            <div class="flex items-center justify-between">
+              <span>Relay</span>
+              <span id="relayStatus" class="font-semibold text-slate-100">--</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Alert State</span>
+              <span id="alertStatus" class="font-semibold text-slate-100">--</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>WiFi</span>
+              <span id="wifiStatus" class="font-semibold text-slate-100">--</span>
+            </div>
+            <div class="pt-2 text-xs text-slate-400">
+              Last update: <span id="lastUpdate">--</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const statusBadge = document.getElementById("statusBadge");
+      const voltageValue = document.getElementById("voltageValue");
+      const statusMessage = document.getElementById("statusMessage");
+      const relayStatus = document.getElementById("relayStatus");
+      const alertStatus = document.getElementById("alertStatus");
+      const wifiStatus = document.getElementById("wifiStatus");
+      const lastUpdate = document.getElementById("lastUpdate");
+
+      const badgeStyles = {
+        OK: "bg-emerald-400/20 text-emerald-200",
+        WARNING: "bg-amber-400/20 text-amber-200",
+        LOW: "bg-rose-500/20 text-rose-200",
+        OFFLINE: "bg-slate-600/30 text-slate-200",
+      };
+
+      function setBadge(status) {
+        statusBadge.className = "rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-wide";
+        statusBadge.classList.add(...badgeStyles[status].split(" "));
+        statusBadge.textContent = status;
+      }
+
+      async function refresh() {
+        try {
+          const response = await fetch("/status", { cache: "no-store" });
+          if (!response.ok) throw new Error("bad response");
+          const data = await response.json();
+          const status = data.status || "OK";
+
+          voltageValue.textContent = data.battery_voltage?.toFixed(2) ?? "--";
+          statusMessage.textContent = data.message || "Status updated.";
+          relayStatus.textContent = data.relay_on ? "ON" : "OFF";
+          alertStatus.textContent = data.alert_sent ? "TRIGGERED" : "ARMED";
+          wifiStatus.textContent = data.wifi || "offline";
+          lastUpdate.textContent = new Date().toLocaleTimeString();
+          setBadge(status);
+        } catch (err) {
+          setBadge("OFFLINE");
+          statusMessage.textContent = "Unable to reach device. Check HTTPS trust or network.";
+          wifiStatus.textContent = "offline";
+        }
+      }
+
+      refresh();
+      setInterval(refresh, 2000);
+    </script>
+  </body>
+</html>
+)HTML";
+
 // Pins
 #define BATTERY_PIN 34
 #define RELAY_PIN   26
@@ -238,6 +351,7 @@ float warningVoltage = 17.0;
 AsyncWebServer server(443);
 bool alertSent = false;
 float lastVoltage = 0.0;
+bool relayOn = true;
 
 float readBatteryVoltage() {
   int raw = analogRead(BATTERY_PIN);
@@ -280,6 +394,10 @@ void updateOLED(float voltage) {
 }
 
 void sendTwilioSMS(String message) {
+  if (String(twilioSID) == "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx") {
+    Serial.println("Twilio SID not configured, skipping SMS.");
+    return;
+  }
   HTTPClient http;
   String url = "https://api.twilio.com/2010-04-01/Accounts/" +
                String(twilioSID) + "/Messages.json";
@@ -311,6 +429,7 @@ void setup() {
 
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, HIGH);
+  relayOn = true;
 
   Wire.begin(21, 22);
 
@@ -335,6 +454,30 @@ void setup() {
   }
 
   WebSerial.begin(&server);
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send_P(200, "text/html", index_html);
+  });
+  server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String status = "OK";
+    String message = "System healthy.";
+    if (lastVoltage <= cutoffVoltage) {
+      status = "LOW";
+      message = "Voltage below cutoff. Relay disabled.";
+    } else if (lastVoltage <= warningVoltage) {
+      status = "WARNING";
+      message = "Voltage approaching cutoff.";
+    }
+
+    String payload = "{";
+    payload += "\"battery_voltage\":" + String(lastVoltage, 2);
+    payload += ",\"status\":\"" + status + "\"";
+    payload += ",\"message\":\"" + message + "\"";
+    payload += ",\"relay_on\":" + String(relayOn ? "true" : "false");
+    payload += ",\"alert_sent\":" + String(alertSent ? "true" : "false");
+    payload += ",\"wifi\":\"" + String(WiFi.status() == WL_CONNECTED ? "connected" : "offline") + "\"";
+    payload += "}";
+    request->send(200, "application/json", payload);
+  });
   server.on("/voltage", HTTP_GET, [](AsyncWebServerRequest *request) {
     String payload = "{\"battery_voltage\": " + String(lastVoltage, 2) + "}";
     if (request->hasParam("callback")) {
@@ -359,6 +502,7 @@ void loop() {
 
   if (voltage <= cutoffVoltage && !alertSent) {
     digitalWrite(RELAY_PIN, LOW);
+    relayOn = false;
 
     sendTwilioSMS("ALERT: Battery voltage dropped to " +
                   String(voltage, 2) + "V");
