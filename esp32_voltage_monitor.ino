@@ -343,8 +343,8 @@ float R1 = 100000.0;
 float R2 = 10000.0;
 
 // Voltage threshold
-float cutoffVoltage = 16.8;
-float warningVoltage = 17.0;
+float cutoffVoltage = 15.6;
+float warningVoltage = 16.4;
 
 // ==========================================
 
@@ -352,6 +352,10 @@ AsyncWebServer server(443);
 bool alertSent = false;
 float lastVoltage = 0.0;
 bool relayOn = true;
+const size_t historySize = 120;
+float voltageHistory[historySize] = {};
+size_t historyIndex = 0;
+bool historyFilled = false;
 
 float readBatteryVoltage() {
   int raw = analogRead(BATTERY_PIN);
@@ -399,7 +403,7 @@ void updateOLED(float voltage) {
   }
 
   if (voltage <= warningVoltage) {
-    const char* warning = "WARNING: <=17.0V";
+    const char* warning = "WARNING: <=16.4V";
     display.getTextBounds(warning, 0, 0, &x1, &y1, &w, &h);
     display.setCursor((SCREEN_WIDTH - w) / 2, 56);
     display.println(warning);
@@ -496,6 +500,125 @@ void setup() {
       payload += "}";
       request->send(200, "application/json", payload);
     });
+    server.on("/history", HTTP_GET, [](AsyncWebServerRequest *request) {
+      const char historyPage[] PROGMEM = R"HTML(
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voltage History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      body { font-family: "Roboto", sans-serif; }
+      canvas { width: 100%; height: 320px; }
+    </style>
+  </head>
+  <body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-900 text-slate-100">
+    <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-10">
+      <header class="flex flex-col gap-2">
+        <p class="text-sm uppercase tracking-[0.3em] text-amber-300">ESP32 Monitor</p>
+        <h1 class="text-3xl font-bold sm:text-4xl">Voltage History</h1>
+        <p class="text-sm text-slate-300">Recent battery voltage samples (auto-refresh).</p>
+      </header>
+
+      <section class="rounded-3xl border border-slate-700/60 bg-slate-900/60 p-6 shadow-xl">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-slate-200">Historical Trend</h2>
+          <span id="latestValue" class="text-sm text-slate-400">--</span>
+        </div>
+        <div class="mt-4">
+          <canvas id="historyChart" width="800" height="320"></canvas>
+        </div>
+        <p class="mt-4 text-xs text-slate-400">Last update: <span id="lastUpdate">--</span></p>
+      </section>
+    </main>
+
+    <script>
+      const canvas = document.getElementById("historyChart");
+      const ctx = canvas.getContext("2d");
+      const latestValue = document.getElementById("latestValue");
+      const lastUpdate = document.getElementById("lastUpdate");
+
+      function drawChart(points) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!points.length) return;
+
+        const padding = 32;
+        const width = canvas.width - padding * 2;
+        const height = canvas.height - padding * 2;
+        const min = Math.min(...points);
+        const max = Math.max(...points);
+        const range = max - min || 1;
+
+        ctx.strokeStyle = "#1f2937";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const y = padding + (height / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(padding + width, y);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#fbbf24";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        points.forEach((value, index) => {
+          const x = padding + (width * index) / (points.length - 1 || 1);
+          const y = padding + height - ((value - min) / range) * height;
+          if (index === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "12px Roboto";
+        ctx.fillText(`${max.toFixed(2)} V`, padding, padding - 10);
+        ctx.fillText(`${min.toFixed(2)} V`, padding, padding + height + 18);
+      }
+
+      async function refresh() {
+        try {
+          const response = await fetch("/history.json", { cache: "no-store" });
+          if (!response.ok) throw new Error("bad response");
+          const data = await response.json();
+          const values = data.values || [];
+          drawChart(values);
+          latestValue.textContent = values.length ? `${values[values.length - 1].toFixed(2)} V` : "--";
+          lastUpdate.textContent = new Date().toLocaleTimeString();
+        } catch (err) {
+          latestValue.textContent = "offline";
+        }
+      }
+
+      refresh();
+      setInterval(refresh, 2000);
+    </script>
+  </body>
+</html>
+)HTML";
+      request->send_P(200, "text/html", historyPage);
+    });
+    server.on("/history.json", HTTP_GET, [](AsyncWebServerRequest *request) {
+      String payload = "{\"values\":[";
+      size_t count = historyFilled ? historySize : historyIndex;
+      for (size_t i = 0; i < count; ++i) {
+        size_t idx = historyFilled ? (historyIndex + i) % historySize : i;
+        payload += String(voltageHistory[idx], 2);
+        if (i + 1 < count) {
+          payload += ",";
+        }
+      }
+      payload += "]}";
+      request->send(200, "application/json", payload);
+    });
     server.on("/voltage", HTTP_GET, [](AsyncWebServerRequest *request) {
       String payload = "{\"battery_voltage\": " + String(lastVoltage, 2) + "}";
       if (request->hasParam("callback")) {
@@ -513,6 +636,11 @@ void setup() {
 void loop() {
   float voltage = readBatteryVoltage();
   lastVoltage = voltage;
+  voltageHistory[historyIndex] = voltage;
+  historyIndex = (historyIndex + 1) % historySize;
+  if (historyIndex == 0) {
+    historyFilled = true;
+  }
 
   Serial.printf("Battery Voltage: %.2f V\n", voltage);
   WebSerial.printf("Battery Voltage: %.2f V\n", voltage);
