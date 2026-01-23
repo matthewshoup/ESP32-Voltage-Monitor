@@ -115,3 +115,9 @@ Update Summary
   Response: Updated FSD text in esp32_voltage_monitor.ino, FSD.txt, and README.md for 15.6V cutoff / 16.4V warning / 16.1V reset.
 - Prompt: yes, please
   Response: Updated ESPHome relay thresholds to 15.6V off / 16.1V on.
+
+Update Summary
+- Prompt: Yes, please. and update the USE3D, please.
+  Response: Updated USE3D thresholds, guarded WebSerial usage, and re-enabled relay on recovery.
+- Prompt: Can you commit these changes with the message "Clean up" and push to main
+  Response: Committed and pushed to main.
