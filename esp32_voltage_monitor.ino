@@ -61,15 +61,15 @@ Create an ESP32-based monitoring system with the following behavior:
 FUNCTIONALITY
 - Continuously monitor battery voltage using an ESP32 ADC pin and
   a properly sized voltage divider.
-- Detect when battery voltage drops to or below 16.8 volts.
+- Detect when battery voltage drops to or below 15.6 volts.
 
 LOW-VOLTAGE RESPONSE
-When the battery voltage reaches 16.8V or lower:
+When the battery voltage reaches 15.6V or lower:
 - Immediately disable the relay output to protect the system.
 - Send a single SMS alert using the Twilio API.
 - Send an HTTP POST request to http://192.168.1.3 containing the
   current battery voltage in JSON format.
-- Prevent repeated alerts until voltage recovers above the threshold.
+- Prevent repeated alerts until voltage recovers above 16.1V.
 
 NETWORK & INTERFACE
 - Connect to WiFi using configured credentials.
@@ -352,6 +352,7 @@ AsyncWebServer server(443);
 bool alertSent = false;
 float lastVoltage = 0.0;
 bool relayOn = true;
+bool webSerialEnabled = false;
 const size_t historySize = 120;
 float voltageHistory[historySize] = {};
 size_t historyIndex = 0;
@@ -476,6 +477,7 @@ void setup() {
     Serial.println("WiFi SSID placeholder in use, skipping web server init.");
   } else {
     WebSerial.begin(&server);
+    webSerialEnabled = true;
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
       request->send_P(200, "text/html", index_html);
     });
@@ -646,7 +648,9 @@ void loop() {
   }
 
   Serial.printf("Battery Voltage: %.2f V\n", voltage);
-  WebSerial.printf("Battery Voltage: %.2f V\n", voltage);
+  if (webSerialEnabled) {
+    WebSerial.printf("Battery Voltage: %.2f V\n", voltage);
+  }
 
   updateOLED(voltage);
 
@@ -663,6 +667,10 @@ void loop() {
 
   if (voltage > cutoffVoltage + 0.5) {
     alertSent = false;
+    if (!relayOn) {
+      digitalWrite(RELAY_PIN, HIGH);
+      relayOn = true;
+    }
   }
 
   delay(2000);
