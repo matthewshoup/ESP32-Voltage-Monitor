@@ -121,3 +121,9 @@ Update Summary
   Response: Updated USE3D thresholds, guarded WebSerial usage, and re-enabled relay on recovery.
 - Prompt: Can you commit these changes with the message "Clean up" and push to main
   Response: Committed and pushed to main.
+
+Update Summary
+- Prompt: can you add the wiring diagram and ascii wiring diagram to the README.md, please?
+  Response: Added wiring diagram and ASCII wiring diagram sections to README.md.
+- Prompt: commit with the message of "adding wiring diagrams to the README" and push
+  Response: Committing with chat log included, then pushing to main.

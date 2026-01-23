@@ -50,3 +50,46 @@ Assumptions
 - OLED uses SSD1306 over I2C at address 0x3C.
 
 ====================================================================
+
+## Wiring Diagram (Text)
+
+```
+BATTERY + -> R1 (100k) -> NODE -> R2 (10k) -> BATTERY - (GND)
+NODE -> ESP32 GPIO34 (ADC input)
+BATTERY - -> ESP32 GND (common ground)
+
+RELAY MODULE:
+  VCC -> ESP32 5V (or 3.3V if module supports it)
+  GND -> ESP32 GND
+  IN  -> ESP32 GPIO26
+  NOTE -> Relay control on GPIO26 (assumes active HIGH)
+
+OLED (SSD1306 I2C):
+  VCC -> ESP32 3.3V
+  GND -> ESP32 GND
+  SDA -> ESP32 GPIO21
+  SCL -> ESP32 GPIO22
+
+```
+
+## Wiring Diagram (ASCII)
+
+```
+Battery + ---- R1 100k ----+---- R2 10k ---- Battery - (GND)
+                           |
+                           +---- GPIO34 (ADC)
+Battery - -----------------+---- ESP32 GND
+
+Relay Module:
+  VCC ---- ESP32 5V (or 3.3V)
+  GND ---- ESP32 GND
+  IN  ---- ESP32 GPIO26
+  NOTE --- Relay control on GPIO26 (assumes active HIGH)
+
+OLED (SSD1306 I2C):
+  VCC ---- 3.3V
+  GND ---- GND
+  SDA ---- GPIO21
+  SCL ---- GPIO22
+
+```
