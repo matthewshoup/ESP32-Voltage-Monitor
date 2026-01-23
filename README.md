@@ -1,0 +1,52 @@
+# ESP32 Voltage Monitor
+
+====================================================================
+FUNCTIONAL SPECIFICATION DOCUMENT (FSD)
+====================================================================
+
+Purpose
+- Monitor battery voltage with an ESP32 and respond to low-voltage
+  conditions while providing local and remote visibility.
+
+Inputs
+- ADC reading from BATTERY_PIN via voltage divider (R1/R2).
+- WiFi credentials (ssid/password).
+
+Outputs
+- Relay control on RELAY_PIN (disable on low voltage).
+- OLED status display (if available).
+- Serial and WebSerial logging.
+- HTTP GET endpoint `/voltage` (JSON/JSONP).
+- HTTP POST to local endpoint when low voltage triggers.
+- SMS alert via Twilio when low voltage triggers.
+
+Functional Requirements
+1) Voltage Measurement
+   - Sample ADC and compute battery voltage using divider ratio.
+   - Update `lastVoltage` each loop.
+2) Display
+   - If OLED initializes, show voltage and status.
+   - If OLED is absent, continue program without blocking.
+   - Show WARNING when voltage <= 17.0V.
+   - Show LOW VOLTAGE when voltage <= 16.8V.
+3) Low-Voltage Handling
+   - At or below 16.8V: disable relay, send SMS, send local POST.
+   - Prevent repeated alerts until voltage rises above 17.3V.
+4) Web Interface
+   - Host HTTPS AsyncWebServer on port 443 (self-signed cert).
+   - `/voltage` returns JSON: {"battery_voltage": XX.XX}
+   - If `callback` param provided, return JSONP: callback(...);
+5) Connectivity
+   - Attempt WiFi for up to 10 seconds; continue offline if not connected.
+
+Non-Functional Requirements
+- Loop period ~2 seconds.
+- Use 12-bit ADC scaling for ESP32 (0-4095) at 3.3V reference.
+- Keep network operations non-blocking where possible.
+
+Assumptions
+- Correct voltage divider sizing for ADC input limits.
+- Relay logic level matches hardware.
+- OLED uses SSD1306 over I2C at address 0x3C.
+
+====================================================================
