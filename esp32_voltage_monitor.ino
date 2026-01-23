@@ -26,11 +26,11 @@ Functional Requirements
 2) Display
    - If OLED initializes, show voltage and status.
    - If OLED is absent, continue program without blocking.
-   - Show WARNING when voltage <= 17.0V.
-   - Show LOW VOLTAGE when voltage <= 16.8V.
+  - Show WARNING when voltage <= 16.4V.
+  - Show LOW VOLTAGE when voltage <= 15.6V.
 3) Low-Voltage Handling
-   - At or below 16.8V: disable relay, send SMS, send local POST.
-   - Prevent repeated alerts until voltage rises above 17.3V.
+   - At or below 15.6V: disable relay, send SMS, send local POST.
+   - Prevent repeated alerts until voltage rises above 16.1V.
 4) Web Interface
    - Host HTTPS AsyncWebServer on port 443 (self-signed cert).
    - `/voltage` returns JSON: {"battery_voltage": XX.XX}

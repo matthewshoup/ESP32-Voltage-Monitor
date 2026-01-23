@@ -53,10 +53,10 @@ sensor:
     filters:
       - multiply: 11.0  # R1=100k, R2=10k => (R1+R2)/R2 = 11
     on_value_range:
-      - below: 16.8
+      - below: 15.6
         then:
           - switch.turn_off: relay_switch
-      - above: 17.3
+      - above: 16.1
         then:
           - switch.turn_on: relay_switch
 

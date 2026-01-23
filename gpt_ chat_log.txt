@@ -105,3 +105,13 @@ Update Summary
   Response: Added /history and /history.json endpoints with a canvas chart and ring buffer.
 - Prompt: commit with message "adding JSON graph for voltage history" and then push
   Response: Committed and pushed to main.
+
+Update Summary
+- Prompt: can you add the FSD to a new file called README.md
+  Response: Created README.md with the FSD content and pushed to main.
+
+Update Summary
+- Prompt: update the FSD with the new voltages
+  Response: Updated FSD text in esp32_voltage_monitor.ino, FSD.txt, and README.md for 15.6V cutoff / 16.4V warning / 16.1V reset.
+- Prompt: yes, please
+  Response: Updated ESPHome relay thresholds to 15.6V off / 16.1V on.
