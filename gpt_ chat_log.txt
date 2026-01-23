@@ -99,3 +99,9 @@ Update Summary
 Update Summary
 - Prompt: Can you commit all the new changes with the message "Adding some sugar" and push to main?
   Response: No uncommitted changes; nothing to commit or push.
+
+Update Summary
+- Prompt: Can ytou give the webserver an endpoint url with an HTML graph to show the historical battery voltage over time?
+  Response: Added /history and /history.json endpoints with a canvas chart and ring buffer.
+- Prompt: commit with message "adding JSON graph for voltage history" and then push
+  Response: Committed and pushed to main.
