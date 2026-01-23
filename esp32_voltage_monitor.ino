@@ -479,6 +479,7 @@ void setup() {
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
       request->send_P(200, "text/html", index_html);
     });
+
     server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request) {
       String status = "OK";
       String message = "System healthy.";
@@ -500,6 +501,7 @@ void setup() {
       payload += "}";
       request->send(200, "application/json", payload);
     });
+
     server.on("/history", HTTP_GET, [](AsyncWebServerRequest *request) {
       const char historyPage[] PROGMEM = R"HTML(
 <!DOCTYPE html>
@@ -619,6 +621,7 @@ void setup() {
       payload += "]}";
       request->send(200, "application/json", payload);
     });
+
     server.on("/voltage", HTTP_GET, [](AsyncWebServerRequest *request) {
       String payload = "{\"battery_voltage\": " + String(lastVoltage, 2) + "}";
       if (request->hasParam("callback")) {
@@ -648,15 +651,14 @@ void loop() {
   updateOLED(voltage);
 
   if (voltage <= cutoffVoltage && !alertSent) {
-    digitalWrite(RELAY_PIN, LOW);
-    relayOn = false;
-
     sendTwilioSMS("ALERT: Battery voltage dropped to " +
                   String(voltage, 2) + "V");
 
     sendLocalPOST(voltage);
 
     alertSent = true;
+    digitalWrite(RELAY_PIN, LOW);
+    relayOn = false;
   }
 
   if (voltage > cutoffVoltage + 0.5) {
