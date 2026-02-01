@@ -313,6 +313,10 @@ bool historyFilled = false;
 
 float readBatteryVoltage() {
   int raw = analogRead(BATTERY_PIN);
+  // Guard against floating ADC when no battery is connected.
+  if (raw < 50) {
+    return 0.0;
+  }
   float adcVoltage = (raw / 4095.0) * 3.3;
   return adcVoltage * ((R1 + R2) / R2);
 }

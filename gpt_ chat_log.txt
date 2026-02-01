@@ -127,3 +127,69 @@ Update Summary
   Response: Added wiring diagram and ASCII wiring diagram sections to README.md.
 - Prompt: commit with the message of "adding wiring diagrams to the README" and push
   Response: Committing with chat log included, then pushing to main.
+
+Update Summary
+- Prompt: can you create a platformio.ini for this project?
+  Response: Created platformio.ini for ESP32 and added required libraries.
+- Prompt: update WiFi creds; upload
+  Response: Updated WiFi credentials (later moved to secrets.h), fixed board/port, installed PlatformIO, and uploaded.
+- Prompt: change battery pin to 4 and relay pin to 0
+  Response: Updated pins and re-uploaded.
+- Prompt: add /relay endpoint
+  Response: Added HTTP endpoint to toggle/set relay state.
+- Prompt: OLED not working
+  Response: Diagnosed I2C pin mismatch; enabled USB CDC on boot; identified correct OLED via hello-world; switched to U8g2 with SSD1306 72x40 on I2C SDA=5/SCL=6; updated layout.
+- Prompt: center and enlarge OLED text
+  Response: Centered OLED text and increased voltage font size; uploaded.
+- Prompt: remove WiFi creds from repo
+  Response: Replaced with placeholders, added secrets.h and .gitignore, and pushed.
+- Prompt: update ESPHOME.yaml and documentation
+  Response: Updated ESPHOME.yaml, FSD.txt, README.md, and in-file FSD/wiring for ESP32-C3 pins and OLED.
+
+Full Session Log (Prompt/Response)
+- Prompt: can you create a platformio.ini for this project?
+  Response: Created platformio.ini with ESP32 env and libraries.
+- Prompt: all
+  Response: Requested WiFi creds, board, port; noted need for upload permissions.
+- Prompt: SouthernExposure2 is the SSID
+  Response: Requested password, board, port.
+- Prompt: __!qazxcvbnm, is the password
+  Response: Updated WiFi creds in sketch; requested board/port.
+- Prompt: esp323dev / yes
+  Response: Confirmed esp32dev; asked for port.
+- Prompt: /dev/cu.usbmodem1101
+  Response: Updated platformio.ini port; tried monitor; pio missing; installed PlatformIO.
+- Prompt: 1 and 2 (install + screen)
+  Response: Installed PlatformIO; started screen session.
+- Prompt: uupload yo device / yes
+  Response: Attempted upload; fixed src_dir placement; switched libs to ESP32Async.
+- Prompt: error AsyncTCP_SSL.h
+  Response: Removed SSL, switched to HTTP on port 80.
+- Prompt: upload
+  Response: Upload failed due to port busy; freed port; upload succeeded.
+- Prompt: esp32-c3-devkitm-1
+  Response: Switched to ESP32-C3 env and default env; upload succeeded.
+- Prompt: change battery pin to 4 and relay pin to 0 / upload
+  Response: Updated pins; upload succeeded after freeing port.
+- Prompt: add endpoint to toggle relay / upload
+  Response: Added /relay endpoint; upload with new port after re-enumeration.
+- Prompt: OLED error scl gpio number error
+  Response: Explained I2C pin mismatch; requested board/pinout.
+- Prompt: esp32 c3 super mini / pinout image
+  Response: Set Wire to SDA=8/SCL=9; upload; no display.
+- Prompt: run I2C scanner / upload
+  Response: Added I2C scan; serial initially blank; enabled USB CDC on boot.
+- Prompt: Amazon board link + IP
+  Response: Added /i2c scan; scanned all pin pairs via HTTP; no devices found.
+- Prompt: try SPI pins / trial combos
+  Response: Iterated SPI DC/RST pins; no success.
+- Prompt: provided hello-world code
+  Response: Switched to U8g2 SSD1306 72x40 I2C on SDA=5/SCL=6; display worked.
+- Prompt: remove boot log + polish OLED + cleanup
+  Response: Removed boot delay/log, polished OLED layout, cleaned comments; uploaded.
+- Prompt: center text / bigger font
+  Response: Centered text; increased font size; uploaded.
+- Prompt: remove WiFi creds + commit/push
+  Response: Replaced creds; added secrets.h/.gitignore; committed and pushed.
+- Prompt: update ESPHOME.yaml + docs + in-file FSD
+  Response: Updated ESPHOME.yaml, FSD.txt, README.md, and in-file FSD/wiring; committed and pushed.
