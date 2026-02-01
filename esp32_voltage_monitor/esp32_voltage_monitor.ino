@@ -318,7 +318,7 @@ void updateOLED(float voltage) {
 
   const int displayWidth = 72;
   const int line1Y = 10;
-  const int line2Y = 26;
+  const int line2Y = 32;
   const int line3Y = 39;
 
   auto drawCentered = [&](const char *text, int y, const uint8_t *font) {
@@ -337,7 +337,7 @@ void updateOLED(float voltage) {
   // Voltage (large)
   char voltageText[16];
   snprintf(voltageText, sizeof(voltageText), "%.2fV", voltage);
-  drawCentered(voltageText, line2Y, u8g2_font_7x14B_tr);
+  drawCentered(voltageText, line2Y, u8g2_font_logisoso20_tr);
 
   // Status line
   if (voltage <= cutoffVoltage) {

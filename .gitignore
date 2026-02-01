@@ -1,2 +1,3 @@
 .pio/
 secrets.h
+esp32_voltage_monitor/secrets.h
