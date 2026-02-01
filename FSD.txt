@@ -3,18 +3,20 @@ FUNCTIONAL SPECIFICATION DOCUMENT (FSD)
 ====================================================================
 
 Purpose
-- Monitor battery voltage with an ESP32 and respond to low-voltage
+- Monitor battery voltage with an ESP32-C3 and respond to low-voltage
   conditions while providing local and remote visibility.
 
 Inputs
 - ADC reading from BATTERY_PIN via voltage divider (R1/R2).
-- WiFi credentials (ssid/password).
+- WiFi credentials via secrets.h.
 
 Outputs
 - Relay control on RELAY_PIN (disable on low voltage).
-- OLED status display (if available).
+- OLED status display (if available, SSD1306 72x40 over I2C).
 - Serial and WebSerial logging.
 - HTTP GET endpoint `/voltage` (JSON/JSONP).
+- HTTP GET endpoint `/status` (JSON status snapshot).
+- HTTP GET endpoint `/relay` (toggle or set relay state).
 - HTTP POST to local endpoint when low voltage triggers.
 - SMS alert via Twilio when low voltage triggers.
 
@@ -31,8 +33,10 @@ Functional Requirements
    - At or below 15.6V: disable relay, send SMS, send local POST.
    - Prevent repeated alerts until voltage rises above 16.1V.
 4) Web Interface
-   - Host HTTPS AsyncWebServer on port 443 (self-signed cert).
-   - `/voltage` returns JSON: {"battery_voltage": XX.XX}
+- Host HTTP AsyncWebServer on port 80.
+- `/voltage` returns JSON: {"battery_voltage": XX.XX}
+- `/status` returns JSON: voltage, relay state, alert state, WiFi state.
+- `/relay` toggles or sets relay state via query param `state=on|off|toggle`.
    - If `callback` param provided, return JSONP: callback(...);
 5) Connectivity
    - Attempt WiFi for up to 10 seconds; continue offline if not connected.
@@ -45,6 +49,11 @@ Non-Functional Requirements
 Assumptions
 - Correct voltage divider sizing for ADC input limits.
 - Relay logic level matches hardware.
-- OLED uses SSD1306 over I2C at address 0x3C.
+- OLED uses SSD1306 72x40 over I2C.
+
+Hardware Defaults (ESP32-C3 Super Mini)
+- BATTERY_PIN: GPIO4
+- RELAY_PIN: GPIO0
+- I2C SDA/SCL: GPIO5/GPIO6
 
 ====================================================================

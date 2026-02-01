@@ -3,7 +3,8 @@ esphome:
   friendly_name: ESP32 Voltage Monitor
 
 esp32:
-  board: esp32dev
+  board: esp32-c3-devkitm-1
+  variant: esp32c3
   framework:
     type: arduino
 
@@ -27,7 +28,7 @@ ota:
 # Relay output
 output:
   - platform: gpio
-    pin: GPIO26
+    pin: GPIO0
     id: relay_output
 
 switch:
@@ -39,13 +40,13 @@ switch:
 
 # I2C for SSD1306 OLED
 i2c:
-  sda: 21
-  scl: 22
+  sda: 5
+  scl: 6
 
 # ADC voltage measurement (GPIO34)
 sensor:
   - platform: adc
-    pin: GPIO34
+    pin: GPIO4
     name: "Battery Voltage"
     id: battery_voltage
     attenuation: 11db
@@ -79,13 +80,15 @@ font:
 
 display:
   - platform: ssd1306_i2c
-    model: "SSD1306 128x64"
+    model: "SSD1306 72x40"
     address: 0x3C
     lambda: |-
-      it.printf(0, 0, id(font_small), "Battery Voltage");
-      it.printf(0, 16, id(font_large), "%.2f V", id(battery_voltage).state);
-      if (id(battery_voltage).state <= 16.8) {
-        it.printf(0, 48, id(font_small), "!! STATUS: LOW VOLTAGE !!");
+      it.printf(0, 0, id(font_small), "Battery");
+      it.printf(0, 12, id(font_large), "%.2fV", id(battery_voltage).state);
+      if (id(battery_voltage).state <= 15.6) {
+        it.printf(0, 28, id(font_small), "LOW VOLT");
+      } else if (id(battery_voltage).state <= 16.4) {
+        it.printf(0, 28, id(font_small), "WARNING");
       } else {
-        it.printf(0, 48, id(font_small), "[STATUS: OK]");
+        it.printf(0, 28, id(font_small), "STATUS OK");
       }
