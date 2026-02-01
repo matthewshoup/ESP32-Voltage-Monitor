@@ -64,11 +64,11 @@ RELAY MODULE:
   IN  -> ESP32 GPIO26
   NOTE -> Relay control on GPIO26 (assumes active HIGH)
 
-OLED (SSD1306 I2C):
+OLED (SSD1306 I2C 0.42", ESP32-C3 Super Mini):
   VCC -> ESP32 3.3V
   GND -> ESP32 GND
-  SDA -> ESP32 GPIO21
-  SCL -> ESP32 GPIO22
+  SDA -> ESP32 GPIO5
+  SCL -> ESP32 GPIO6
 
 ```
 
@@ -86,10 +86,10 @@ Relay Module:
   IN  ---- ESP32 GPIO26
   NOTE --- Relay control on GPIO26 (assumes active HIGH)
 
-OLED (SSD1306 I2C):
+OLED (SSD1306 I2C 0.42", ESP32-C3 Super Mini):
   VCC ---- 3.3V
   GND ---- GND
-  SDA ---- GPIO21
-  SCL ---- GPIO22
+  SDA ---- GPIO5
+  SCL ---- GPIO6
 
 ```
